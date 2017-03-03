@@ -23,7 +23,7 @@
         <!-- AddTaskActivity -->
         <activity
             android:name="com.example.android.todolist.AddTaskActivity"
-            android:label="@string/add_task_activity_name" />
+             />
 
         <!-- Register the TaskContentProvider -->
         <!-- Set name, authorities, and exported attributes -->

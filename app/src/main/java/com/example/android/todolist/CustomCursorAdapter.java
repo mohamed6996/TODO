@@ -34,8 +34,7 @@ import com.example.android.todolist.data.TaskContract;
 
 public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapter.TaskViewHolder> {
 
-   final private ListItemClickListner mOnClickListner;
-    int id;
+    final private ListItemClickListner mOnClickListner;
 
     private Cursor mCursor;
     private Context mContext;
@@ -43,8 +42,7 @@ public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapte
     long picked_hour;
 
 
-
-    public CustomCursorAdapter(Context mContext,ListItemClickListner listner) {
+    public CustomCursorAdapter(Context mContext, ListItemClickListner listner) {
         this.mContext = mContext;
         this.mOnClickListner = listner;
     }
@@ -71,11 +69,10 @@ public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapte
         int timeIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_TIME);
 
 
-
         mCursor.moveToPosition(position); // get to the right location in the cursor
 
         // Determine the values of the wanted data
-        id = mCursor.getInt(idIndex);
+        final int id = mCursor.getInt(idIndex);
         String title = mCursor.getString(titleIndex);
         String description = mCursor.getString(descriptionIndex);
         picked_hour = mCursor.getLong(timeIndex);
@@ -83,7 +80,7 @@ public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapte
 
         //Set values
         holder.itemView.setTag(id);
-        holder.taskDescriptionView.setText(title + description );
+        holder.taskDescriptionView.setText(title + description);
 
 
         long time = System.currentTimeMillis();
@@ -102,15 +99,13 @@ public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapte
 
         Intent intent = new Intent(mContext, AlarmToastReceiver.class);
         final int _id = (int) System.currentTimeMillis();
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, _id , intent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, _id, intent, PendingIntent.FLAG_ONE_SHOT);
 
         AlarmManager alarmManager = (AlarmManager) mContext.getSystemService(mContext.ALARM_SERVICE);
         alarmManager.setExact(AlarmManager.RTC, time, pendingIntent);
 
 
     }
-
-
 
 
     @Override
@@ -156,7 +151,7 @@ public class CustomCursorAdapter extends RecyclerView.Adapter<CustomCursorAdapte
 
         @Override
         public void onClick(View view) {
-            mOnClickListner.onListItemClick(getAdapterPosition(),id);
+            mOnClickListner.onListItemClick(getAdapterPosition(), (Integer) itemView.getTag());
 
         }
     }
