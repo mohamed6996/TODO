@@ -133,6 +133,16 @@ public class TaskContentProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
+            case TASK_WITH_ID:
+
+                selection = TaskContract.TaskEntry._ID + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+
+                // This will perform a query on the pets table where the _id equals 3 to return a
+                // Cursor containing that row of the table.
+                retCursor = db.query(TaskContract.TaskEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
             // Default exception
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -186,6 +196,27 @@ public class TaskContentProvider extends ContentProvider {
     public int update(@NonNull Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
 
+        final int match = sUriMatcher.match(uri);
+        switch (match){
+            case TASK_WITH_ID:
+
+                selection = TaskContract.TaskEntry._ID + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+
+                SQLiteDatabase database = mTaskDbHelper.getWritableDatabase();
+
+                // Perform the update on the database and get the number of rows affected
+                int rowsUpdated = database.update(TaskContract.TaskEntry.TABLE_NAME, values, selection, selectionArgs);
+
+                // If 1 or more rows were updated, then notify all listeners that the data at the
+                // given URI has changed
+                if (rowsUpdated != 0) {
+                    getContext().getContentResolver().notifyChange(uri, null);
+                }
+
+                // Return the number of rows updated
+                return rowsUpdated;
+        }
         throw new UnsupportedOperationException("Not yet implemented");
     }
 

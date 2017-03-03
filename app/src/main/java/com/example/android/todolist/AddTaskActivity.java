@@ -17,15 +17,22 @@
 package com.example.android.todolist;
 
 import android.content.ContentValues;
+import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
+import android.support.v4.app.LoaderManager;
+
 
 import com.example.android.todolist.data.TaskContract;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
@@ -35,20 +42,40 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 
-public class AddTaskActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener, DatePickerDialog.OnDateSetListener {
+public class AddTaskActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener,
+        DatePickerDialog.OnDateSetListener, LoaderManager.LoaderCallbacks<Cursor> {
 
 
     FloatingActionButton fabTime;
+    Button add_btn;
+    EditText edt_title, edt_description;
     int year, monthOfYear, dayOfMonth;
     int hourOfDay, minute, second;
     long time;
 
-    Button add_btn;
+    Uri mCurrentUri;
+
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_task);
 
+        edt_title = (EditText) findViewById(R.id.editTextTaskDescription);
+        edt_description = (EditText) findViewById(R.id.TaskDescription);
+
+
+        Intent intent = getIntent();
+        mCurrentUri = intent.getData();
+
+        if (mCurrentUri == null) {
+            setTitle("add task");
+            //  Toast.makeText(AddTaskActivity.this, "" + mCurrentUri, Toast.LENGTH_LONG).show();
+
+        } else {
+            setTitle("update task");
+            getSupportLoaderManager().initLoader(0, null, this);
+            //   Toast.makeText(AddTaskActivity.this, "" + mCurrentUri, Toast.LENGTH_LONG).show();
+        }
 
 
         add_btn = (Button) findViewById(R.id.addButton);
@@ -79,18 +106,65 @@ public class AddTaskActivity extends AppCompatActivity implements TimePickerDial
 
     }
 
+    @Override
+    public android.support.v4.content.Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
 
+        String[] projection = {
+                TaskContract.TaskEntry._ID,
+                TaskContract.TaskEntry.COLUMN_TITLE,
+                TaskContract.TaskEntry.COLUMN_DESCRIPTION,
+                TaskContract.TaskEntry.COLUMN_TIME
+
+        };
+
+        return new android.support.v4.content.CursorLoader(this, mCurrentUri,
+                projection,
+                null, null, null);
+    }
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        // Update the data that the adapter uses to create ViewHolders
+        // mAdapter.swapCursor(data);
+        String title, description;
+        if (cursor.moveToFirst()) {
+
+            int titleIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_TITLE);
+            int descriptionIndex = cursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_DESCRIPTION);
+
+
+            // Determine the values of the wanted data
+            title = cursor.getString(titleIndex);
+            description = cursor.getString(descriptionIndex);
+
+            edt_title.setText(title);
+            edt_description.setText(description);
+            Toast.makeText(AddTaskActivity.this, "" + title + description, Toast.LENGTH_LONG).show();
+
+        }
+
+
+    }
+
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        // mAdapter.swapCursor(null);
+        edt_title.setText("");
+        edt_description.setText("");
+    }
 
 
     public void onClickAddTask() {
 
-        String input = ((EditText) findViewById(R.id.editTextTaskDescription)).getText().toString();
+        String input = edt_title.getText().toString();
       /*  if (input.length() == 0) {
             return;
         }*/
 
 
-        String description_input = ((EditText) findViewById(R.id.TaskDescription)).getText().toString();
+        String description_input = edt_description.getText().toString();
       /*  if (input.length() == 0) {
             return;
         }*/
@@ -102,7 +176,7 @@ public class AddTaskActivity extends AppCompatActivity implements TimePickerDial
         contentValues.put(TaskContract.TaskEntry.COLUMN_TITLE, input);
         contentValues.put(TaskContract.TaskEntry.COLUMN_DESCRIPTION, description_input);
         contentValues.put(TaskContract.TaskEntry.COLUMN_TIME, time);
-        
+
         Uri uri = getContentResolver().insert(TaskContract.TaskEntry.CONTENT_URI, contentValues);
 
 
@@ -112,6 +186,75 @@ public class AddTaskActivity extends AppCompatActivity implements TimePickerDial
 
         finish();
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu options from the res/menu/menu_catalog.xml file.
+        // This adds menu items to the app bar.
+        getMenuInflater().inflate(R.menu.menu_editor, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // User clicked on a menu option in the app bar overflow menu
+        switch (item.getItemId()) {
+            // Respond to a click on the "Insert dummy data" menu option
+            case R.id.update:
+                updateTask();
+                finish();
+                return true;
+
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void updateTask() {
+        // Read from input fields
+        // Use trim to eliminate leading or trailing white space
+        String title_str = edt_title.getText().toString();
+        String description_str = edt_description.getText().toString();
+
+        ContentValues values = new ContentValues();
+        values.put(TaskContract.TaskEntry.COLUMN_TIME, title_str);
+        values.put(TaskContract.TaskEntry.COLUMN_DESCRIPTION, description_str);
+
+
+        // Determine if this is a new or existing pet by checking if mCurrentPetUri is null or not
+        if (mCurrentUri == null) {
+            // This is a NEW pet, so insert a new pet into the provider,
+            // returning the content URI for the new pet.
+            Uri newUri = getContentResolver().insert(TaskContract.TaskEntry.CONTENT_URI, values);
+
+            // Show a toast message depending on whether or not the insertion was successful.
+            if (newUri == null) {
+                // If the new content URI is null, then there was an error with insertion.
+                Toast.makeText(this, "failed",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the insertion was successful and we can display a toast.
+                Toast.makeText(this, "successful",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // Otherwise this is an EXISTING pet, so update the pet with content URI: mCurrentPetUri
+            // and pass in the new ContentValues. Pass in null for the selection and selection args
+            // because mCurrentPetUri will already identify the correct row in the database that
+            // we want to modify.
+            int rowsAffected = getContentResolver().update(mCurrentUri, values, null, null);
+
+            // Show a toast message depending on whether or not the update was successful.
+            if (rowsAffected == 0) {
+                // If no rows were affected, then there was an error with the update.
+                Toast.makeText(this, "failed",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the update was successful and we can display a toast.
+                Toast.makeText(this, "successful",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -159,7 +302,6 @@ public class AddTaskActivity extends AppCompatActivity implements TimePickerDial
         cal.set(Calendar.SECOND, this.second);
 
         time = cal.getTimeInMillis();
-
 
 
     }

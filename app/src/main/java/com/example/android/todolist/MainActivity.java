@@ -150,7 +150,14 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onListItemClick(int position, int id) {
 
-        Toast.makeText(MainActivity.this,""+ position+ id,Toast.LENGTH_LONG).show();
+       // Toast.makeText(MainActivity.this,""+ position+ id,Toast.LENGTH_LONG).show();
+
+        Intent intent = new Intent(MainActivity.this,AddTaskActivity.class);
+        String stringId = Integer.toString(id);
+        Uri uri = TaskContract.TaskEntry.CONTENT_URI;
+        uri = uri.buildUpon().appendPath(stringId).build();
+        intent.setData(uri);
+        startActivity(intent);
 
     }
 }
